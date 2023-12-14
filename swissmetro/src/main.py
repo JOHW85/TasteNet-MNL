@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import pickle
 from collections import OrderedDict
 
+#/opt/homebrew/bin/python3 main.py --l1 0.00 --l2 0.000 --mps --act_func "relu"  --hidden_sizes 110
 
 # Specify input parameters 
 parser = argparse.ArgumentParser(description='Neural network for Flexible utility (VOT =f(z))')
@@ -41,6 +42,8 @@ parser.add_argument("--model_no", type=int, default=999, required=False, help="m
 
 parser.add_argument('--cuda', action='store_true', default=False,
                     help='enables CUDA training')
+parser.add_argument('--mps', action='store_true', default=False,
+                    help='enables Apple Metal Performance Shader training')
 parser.add_argument('--seed', type=int, default=None, 
                     help='random seed (default: None)')
 
@@ -51,6 +54,8 @@ parser.add_argument("--result_root", type=str, default='../results', help="root 
 #=======Parse arguments=============
 args = parser.parse_args()
 args.cuda = args.cuda and torch.cuda.is_available()
+args.mps = args.mps and torch.backends.mps.is_available() 
+
 
 # input data name 
 args.data_train = "train.pkl"
@@ -67,9 +72,9 @@ ds_all = ChoiceDataset(args.data_path, args.data_all)
 
 args.z_size = ds_train.z.size()[1]
 
-data_train = DataLoader(ds_train, batch_size=args.batch_size, shuffle=True, num_workers=5)
-data_dev = DataLoader(ds_dev, batch_size=args.batch_size, shuffle=False, num_workers=5)
-data_test = DataLoader(ds_test, batch_size=args.batch_size, shuffle=False, num_workers=5)
+data_train = DataLoader(ds_train, batch_size=args.batch_size, shuffle=True, num_workers=0)
+data_dev = DataLoader(ds_dev, batch_size=args.batch_size, shuffle=False, num_workers=0)
+data_test = DataLoader(ds_test, batch_size=args.batch_size, shuffle=False, num_workers=0)
 
 
 #======Prepare output path ========
@@ -113,7 +118,7 @@ if not os.path.exists(args.result_path):
 
 if args.seed != None: 
     torch.manual_seed(args.seed)
-device = torch.device("cuda" if args.cuda else "cpu")
+device = torch.device("mps" if args.mps else "cuda" if args.cuda else "cpu")
 
 #======Get model==================
 print(args)
